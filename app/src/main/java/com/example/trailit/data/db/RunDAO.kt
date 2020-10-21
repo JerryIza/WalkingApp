@@ -1,7 +1,8 @@
-package com.example.trailit.db
+package com.example.trailit.data.db
 
 import androidx.lifecycle.LiveData
 import androidx.room.*
+import com.example.trailit.data.entitites.Run
 
 //SUSPEND to be able to be executed in a couroutine.
 

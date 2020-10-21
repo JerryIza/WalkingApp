@@ -23,17 +23,17 @@ class MainActivity : AppCompatActivity() {
         //do we need to navigate to tracking fragment based of Intent?
         navigateToTrackingFragment(intent)
 
-
         bottomNavigationView.setupWithNavController(navHostFragment.findNavController())
 
-        navHostFragment.findNavController().addOnDestinationChangedListener {
+        //might delete later
+        /*navHostFragment.findNavController().addOnDestinationChangedListener {
             _, destination, _ ->
             when(destination.id){
                 R.id.settingsFragment, R.id.runFragment, R.id.statisticsFragment ->
                     bottomNavigationView.visibility = View.VISIBLE
                 else -> bottomNavigationView.visibility = View.GONE
             }
-        }
+        }*/
     }
 
     override fun onNewIntent(intent: Intent?) {

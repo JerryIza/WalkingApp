@@ -1,4 +1,4 @@
-package com.example.trailit.db
+package com.example.trailit.data.converters
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory

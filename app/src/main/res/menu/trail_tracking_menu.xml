@@ -7,7 +7,7 @@
 
         android:visible="false"
         app:showAsAction="always"
-        android:title="Cancel Mapping"
+        android:title="@string/cancel_mapping"
         />
 
 

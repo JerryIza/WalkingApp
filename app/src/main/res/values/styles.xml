@@ -1,10 +1,10 @@
 <resources>
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorPrimary">@color/design_default_color_error</item>
+        <item name="colorPrimaryDark">@android:color/widget_edittext_dark</item>
+        <item name="colorAccent">@android:color/holo_orange_dark</item>
         <item name="colorSurface">@color/md_blue_900</item>
         <item name="alertDialogTheme">@style/AlertDialogTheme</item>
     </style>
@@ -15,11 +15,11 @@
     </style>
 
     <style name="NegativeButtonStyle" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
-        <item name="android:textColor">@color/colorAccent</item>
+        <item name="android:textColor">#FF9800</item>
     </style>
 
     <style name="PositiveButtonStyle" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
-        <item name="android:textColor">@color/colorAccent</item>
+        <item name="android:textColor">#FF9800</item>
     </style>
 
 

@@ -11,15 +11,17 @@ import android.content.Intent
 import android.location.Location
 import android.os.Build
 import android.os.Looper
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import com.example.trailit.R
+import com.example.trailit.other.Constants.ACTION_IDLE_SERVICE
 import com.example.trailit.other.Constants.ACTION_PAUSE_SERVICE
-import com.example.trailit.other.Constants.ACTION_SHOW_TRACKING_FRAGMENT
-import com.example.trailit.other.Constants.ACTION_START_RESUME_SERVICE
+import com.example.trailit.other.Constants.ACTION_START_RESUME_TRACKING_SERVICE
+import com.example.trailit.other.Constants.ACTION_START_SERVICE
 import com.example.trailit.other.Constants.ACTION_STOP_SERVICE
 import com.example.trailit.other.Constants.CHANNEL_ID
 import com.example.trailit.other.Constants.CHANNEL_NAME
@@ -28,14 +30,15 @@ import com.example.trailit.other.Constants.LOWEST_UPDATE_INTERVAL
 import com.example.trailit.other.Constants.NOTIFICATION_ID
 import com.example.trailit.other.Constants.TIMER_UPDATE_INTERVAL
 import com.example.trailit.other.TrackingUtility
-import com.example.trailit.ui.MainActivity
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.location.LocationResult
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.LatLng
-import dagger.hilt.EntryPoint
+import com.google.android.gms.maps.model.MarkerOptions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,8 +54,14 @@ typealias TrailLines = MutableList<TrailLine>
 @AndroidEntryPoint
 class TrackingService : LifecycleService() {
 
+    private var map: GoogleMap? = null
+
+
     var isFistTrail = true
     var serviceKilled = false
+
+    private lateinit var currentLocation: Location
+
 
     //needed to provide location updates.
     @Inject
@@ -104,7 +113,11 @@ class TrackingService : LifecycleService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
             when (it.action) {
-                ACTION_START_RESUME_SERVICE -> {
+
+                ACTION_START_SERVICE -> {
+                    startLocationForegroundService()
+                }
+                ACTION_START_RESUME_TRACKING_SERVICE -> {
                     if (isFistTrail) {
                         startForegroundService()
                         isFistTrail = false
@@ -128,7 +141,7 @@ class TrackingService : LifecycleService() {
         return super.onStartCommand(intent, flags, startId)
     }
 
-    //longitude, latitude and we will add altitude later on
+    //longitude & latitude
     private fun addCoordinatePoint(location: Location?) {
         location?.let {
             val pos = LatLng(location.latitude, location.longitude)
@@ -139,7 +152,7 @@ class TrackingService : LifecycleService() {
         }
     }
 
-    private var isTimerEnalbed = false
+    private var isTimerEnabled = false
     private var lapTime = 0L
     private var trailTime = 0L
     private var startTime = 0L
@@ -149,7 +162,7 @@ class TrackingService : LifecycleService() {
         addEmptyLine()
         isTracking.postValue(true)
         startTime = System.currentTimeMillis()
-        isTimerEnalbed = true
+        isTimerEnabled = true
         //don't execute all at once, for better performance, coroutine will cause a few second delay.
         CoroutineScope(Dispatchers.Main).launch {
             while (isTracking.value!!) {
@@ -165,38 +178,41 @@ class TrackingService : LifecycleService() {
             trailTime += lapTime
         }
     }
+
     private fun pauseService() {
         isTracking.postValue(false)
-        isTimerEnalbed = false
+        isTimerEnabled = false
     }
 
-    private fun updateNotificationMappingState(isTracking: Boolean){
+    private fun updateNotificationMappingState(isTracking: Boolean) {
         val notificationActionText = if (isTracking) "Pause" else "Resume"
-        val pendingIntent = if(isTracking)  {
-            val pauseIntent = Intent(this,TrackingService::class.java).apply {
+        val pendingIntent = if (isTracking) {
+            val pauseIntent = Intent(this, TrackingService::class.java).apply {
                 action = ACTION_PAUSE_SERVICE
             }
             PendingIntent.getService(this, 1, pauseIntent, FLAG_UPDATE_CURRENT)
         } else {
             val resumeIntent = Intent(this, TrackingService::class.java).apply {
-                action = ACTION_START_RESUME_SERVICE
+                action = ACTION_START_RESUME_TRACKING_SERVICE
             }
             PendingIntent.getService(this, 2, resumeIntent, FLAG_UPDATE_CURRENT)
         }
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
 
         realTimeNotificationBuilder.javaClass.getDeclaredField("mActions").apply {
             isAccessible = true
             set(realTimeNotificationBuilder, ArrayList<NotificationCompat.Action>())
         }
-        if(!serviceKilled) {
+        if (!serviceKilled) {
             realTimeNotificationBuilder = baseNotificationBuilder
                 .addAction(R.drawable.ic_pause_black_24dp, notificationActionText, pendingIntent)
             notificationManager.notify(NOTIFICATION_ID, realTimeNotificationBuilder.build())
         }
     }
 
+    //doesn't recognize easy permission library
     @SuppressLint("MissingPermission")
     private fun updateTracking(isTracking: Boolean) {
         if (isTracking) {
@@ -217,7 +233,8 @@ class TrackingService : LifecycleService() {
         }
     }
 
-    val locationCallback = object : LocationCallback() {
+
+    private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(results: LocationResult?) {
             super.onLocationResult(results)
             if (isTracking.value!!) {
@@ -236,6 +253,7 @@ class TrackingService : LifecycleService() {
         coordinatePoints.postValue(this)
     } ?: coordinatePoints.postValue(mutableListOf(mutableListOf()))
 
+
     private fun startForegroundService() {
         startTimer()
         isTracking.postValue(true)
@@ -251,10 +269,10 @@ class TrackingService : LifecycleService() {
         startForeground(NOTIFICATION_ID, baseNotificationBuilder.build())
 
         trailTimeInSeconds.observe(this, Observer {
-            if(!serviceKilled){
-            val notification = realTimeNotificationBuilder
-                .setContentText(TrackingUtility.getFormattedStopWatchTime(it * 1000L))
-            notificationManager.notify(NOTIFICATION_ID, notification.build())
+            if (!serviceKilled) {
+                val notification = realTimeNotificationBuilder
+                    .setContentText(TrackingUtility.getFormattedStopWatchTime(it * 1000L))
+                notificationManager.notify(NOTIFICATION_ID, notification.build())
             }
         })
     }
@@ -271,5 +289,30 @@ class TrackingService : LifecycleService() {
         notificationManager.createNotificationChannel(channel)
 
     }
+
+    private fun startLocationForegroundService() {
+        addEmptyLine()
+        isTracking.postValue(true)
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE)
+                //A system service of android framework that we need to create notification.
+                as NotificationManager
+        //if Oreo or newer build notification.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createNotificationChannel(notificationManager)
+        }
+        //updating notification without AO boiler plate code by using injection for context.
+        startForeground(NOTIFICATION_ID, baseNotificationBuilder.build())
+
+        trailTimeInSeconds.observe(this, Observer {
+            if (!serviceKilled) {
+                val notification = realTimeNotificationBuilder
+                    .setContentText(TrackingUtility.getFormattedStopWatchTime(it * 1000L))
+                notificationManager.notify(NOTIFICATION_ID, notification.build())
+            }
+        })
+    }
+
+
 
 }

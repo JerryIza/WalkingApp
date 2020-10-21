@@ -1,6 +1,7 @@
 package com.example.trailit.ui.fragments
 
 import android.content.Intent
+import android.location.Location
 import android.os.Bundle
 import android.view.*
 import androidx.core.view.get
@@ -9,9 +10,11 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.navigation.fragment.findNavController
 import com.example.trailit.R
-import com.example.trailit.db.Run
+import com.example.trailit.data.entitites.Run
+import com.example.trailit.databinding.MapFragmentBinding
+import com.example.trailit.other.Constants.ACTION_IDLE_SERVICE
 import com.example.trailit.other.Constants.ACTION_PAUSE_SERVICE
-import com.example.trailit.other.Constants.ACTION_START_RESUME_SERVICE
+import com.example.trailit.other.Constants.ACTION_START_RESUME_TRACKING_SERVICE
 import com.example.trailit.other.Constants.ACTION_STOP_SERVICE
 import com.example.trailit.other.Constants.MAP_ZOOM
 import com.example.trailit.other.Constants.TRAILLINE_COLOR
@@ -22,19 +25,29 @@ import com.example.trailit.services.TrailLine
 import com.example.trailit.ui.viewmodels.MainViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.android.synthetic.main.fragment_tracking.*
+import kotlinx.android.synthetic.main.map_fragment.*
+import timber.log.Timber
 import java.util.*
+import javax.inject.Inject
 import kotlin.math.round
 
 
 @AndroidEntryPoint
-class TrackingFragment : Fragment(R.layout.fragment_tracking) {
+class MapFragment : Fragment() {
 
+    /*
+    Use View binding instead of synthetics(findViewByID(R.id.example)) because,
+    it's always null save and references ids from current layout(very helpful in bigger projects)
+    */
+    private lateinit var binding: MapFragmentBinding
+    //"by" is how we inject from viewmodel
     private val viewModel: MainViewModel by viewModels()
 
     private var isTracking = false
@@ -47,44 +60,49 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
     private var menu: Menu? = null
 
-    private var weight = 80f
+    @set:Inject
+    var weight = 80f
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        binding = MapFragmentBinding.inflate(inflater, container, false)
         setHasOptionsMenu(true)
-        return super.onCreateView(inflater, container, savedInstanceState)
+        return binding.root
+
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         mapView.onCreate(savedInstanceState)
 
-        btnFinishRun.setOnClickListener {
+        binding.btnFinishRun.setOnClickListener {
             panViewAngleToWholeTrailAndCapture()
             endRunAndSaveToDb()
         }
 
-        btnToggleRun.setOnClickListener {
+        binding.btnToggleRun.setOnClickListener {
             toggleRun()
         }
 
-        mapView.getMapAsync {
+        binding.mapView.getMapAsync {
             map = it
             addAllTrailLines()
         }
-
         setUpObservers()
+        commandToService(ACTION_IDLE_SERVICE)
+
     }
+
 
     private fun toggleRun() {
         if (isTracking) {
             menu?.get(0)?.isVisible = true
             commandToService(ACTION_PAUSE_SERVICE)
         } else {
-            commandToService(ACTION_START_RESUME_SERVICE)
+            commandToService(ACTION_START_RESUME_TRACKING_SERVICE)
         }
     }
 
@@ -129,6 +147,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
     private fun stopMapping() {
         commandToService(ACTION_STOP_SERVICE)
+        Timber.tag("COORDINATES" + coordinatePoints)
         findNavController().navigate(R.id.action_trackingFragment_to_runFragment)
     }
 
@@ -148,6 +167,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
             val formattedTime = TrackingUtility.getFormattedStopWatchTime(currentTimeMillis, true)
             tvTimer.text = formattedTime
         })
+
     }
 
     private fun updateTracking(isTracking: Boolean) {
@@ -162,6 +182,13 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
             btnFinishRun.visibility = View.GONE
         }
     }
+
+    private fun defaultViewAngleToUser() {
+            map?.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                coordinatePoints.last().last(), MAP_ZOOM
+            ))
+        }
+
 
     private fun panViewAngleToUser() {
         if (coordinatePoints.isNotEmpty() && coordinatePoints.last().isNotEmpty()) {
@@ -179,6 +206,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         for (trailLine in coordinatePoints) {
             for (pos in trailLine) {
                 bounds.include(pos)
+                println(pos)
             }
         }
         map?.moveCamera(
@@ -186,10 +214,11 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
                 bounds.build(),
                 mapView.width,
                 mapView.height,
-                (mapView.height * 0.20f.toInt())
+                (mapView.height * 0.20f.toInt()),
             )
         )
     }
+
 
     private fun endRunAndSaveToDb() {
         map?.snapshot { bmp ->
@@ -197,8 +226,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
             for (trailLine in coordinatePoints) {
                 distanceInMeters += TrackingUtility.calculateTrailLineLength(trailLine).toInt()
             }
-            val avgSpeed =
-                round((distanceInMeters / 1609f) / (currentTimeMillis / 1000f / 60 / 60) * 10) / 10
+            val avgSpeed = round((distanceInMeters / 1609f) / (currentTimeMillis / 1000f / 60 / 60) * 10) / 10
             val dateTimestamp = Calendar.getInstance().timeInMillis
             //we can pair with a smart watch, would be calculated much better
             val caloriesBurned = ((distanceInMeters / 1000f) * weight).toInt()
@@ -212,6 +240,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
             )
             viewModel.insertRun(run)
             Snackbar.make(
+                //
                 requireActivity().findViewById(R.id.rootView),
                 "Trail saved successfully",
                 Snackbar.LENGTH_LONG
@@ -222,6 +251,7 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
 
     private fun addAllTrailLines() {
         for (trailLine in coordinatePoints) {
+
             val trailLineOptions = PolylineOptions()
                 .color(TRAILLINE_COLOR)
                 .width(TRAILLINE_WIDTH)
@@ -279,6 +309,5 @@ class TrackingFragment : Fragment(R.layout.fragment_tracking) {
         super.onSaveInstanceState(outState)
         mapView.onSaveInstanceState(outState)
     }
-
 
 }

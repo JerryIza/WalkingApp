@@ -1,7 +1,7 @@
 package com.example.trailit.repositories
 
-import com.example.trailit.db.Run
-import com.example.trailit.db.RunDAO
+import com.example.trailit.data.entitites.Run
+import com.example.trailit.data.db.RunDAO
 import javax.inject.Inject
 
 //to provide the functions of our database, for our viewmodels, we will need the dao object in our repo

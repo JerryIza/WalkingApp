@@ -1,4 +1,4 @@
-package com.example.trailit.db
+package com.example.trailit.data.entitites
 
 import android.graphics.Bitmap
 import androidx.room.Entity
