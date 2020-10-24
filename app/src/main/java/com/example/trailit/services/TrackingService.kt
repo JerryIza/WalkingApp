@@ -18,8 +18,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import com.example.trailit.R
-import com.example.trailit.other.Constants.ACTION_IDLE_SERVICE
-import com.example.trailit.other.Constants.ACTION_PAUSE_SERVICE
+   import com.example.trailit.other.Constants.ACTION_PAUSE_SERVICE
 import com.example.trailit.other.Constants.ACTION_START_RESUME_TRACKING_SERVICE
 import com.example.trailit.other.Constants.ACTION_START_SERVICE
 import com.example.trailit.other.Constants.ACTION_STOP_SERVICE
@@ -54,14 +53,8 @@ typealias TrailLines = MutableList<TrailLine>
 @AndroidEntryPoint
 class TrackingService : LifecycleService() {
 
-    private var map: GoogleMap? = null
-
-
     var isFistTrail = true
     var serviceKilled = false
-
-    private lateinit var currentLocation: Location
-
 
     //needed to provide location updates.
     @Inject
@@ -113,10 +106,6 @@ class TrackingService : LifecycleService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
             when (it.action) {
-
-                ACTION_START_SERVICE -> {
-                    startLocationForegroundService()
-                }
                 ACTION_START_RESUME_TRACKING_SERVICE -> {
                     if (isFistTrail) {
                         startForegroundService()
@@ -134,6 +123,8 @@ class TrackingService : LifecycleService() {
                 ACTION_STOP_SERVICE -> {
                     Timber.d("Stopped service")
                     killService()
+                    isTracking.postValue(false)
+
                 }
 
             }
@@ -289,30 +280,6 @@ class TrackingService : LifecycleService() {
         notificationManager.createNotificationChannel(channel)
 
     }
-
-    private fun startLocationForegroundService() {
-        addEmptyLine()
-        isTracking.postValue(true)
-
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE)
-                //A system service of android framework that we need to create notification.
-                as NotificationManager
-        //if Oreo or newer build notification.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel(notificationManager)
-        }
-        //updating notification without AO boiler plate code by using injection for context.
-        startForeground(NOTIFICATION_ID, baseNotificationBuilder.build())
-
-        trailTimeInSeconds.observe(this, Observer {
-            if (!serviceKilled) {
-                val notification = realTimeNotificationBuilder
-                    .setContentText(TrackingUtility.getFormattedStopWatchTime(it * 1000L))
-                notificationManager.notify(NOTIFICATION_ID, notification.build())
-            }
-        })
-    }
-
 
 
 }

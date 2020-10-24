@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/nav_graph"
-    app:startDestination="@id/trackingFragment">
+    app:startDestination="@id/trailsFragment">
 
     <action android:id="@+id/action_global_trackingFragment"
         app:destination="@+id/trackingFragment"
@@ -9,23 +9,32 @@
 
 
     <fragment
-        android:id="@+id/runFragment"
-        android:name="com.example.trailit.ui.fragments.RunFragment"
+        android:id="@+id/trailsFragment"
+        android:name="com.example.trailit.ui.fragments.TrailsFragment"
         android:label="RunFragment" />
     <fragment
         android:id="@+id/statisticsFragment"
         android:name="com.example.trailit.ui.fragments.StatisticsFragment"
-        android:label="StatisticsFragment" />
-    <fragment
-        android:id="@+id/settingsFragment"
-        android:name="com.example.trailit.ui.fragments.SettingsFragment"
-        android:label="SettingsFragment" />
+        android:label="StatisticsFragment" >
+        <action
+            android:id="@+id/action_statisticsFragment_to_trailsFragment"
+            app:destination="@id/trailsFragment" />
+    </fragment>
+
     <fragment
         android:id="@+id/trackingFragment"
         android:name="com.example.trailit.ui.fragments.MapFragment"
         android:label="TrackingFragment" >
         <action
-            android:id="@+id/action_trackingFragment_to_runFragment"
-            app:destination="@id/runFragment" />
+            android:id="@+id/action_trackingFragment_to_trailsFragment"
+            app:destination="@id/trailsFragment" />
+        <action
+            android:id="@+id/action_trackingFragment_to_statisticsFragment"
+            app:destination="@id/statisticsFragment" />
     </fragment>
+
+    <dialog
+        android:id="@+id/acceptDialogFragment"
+        android:name="com.example.trailit.ui.fragments.AcceptDialogFragment"
+        android:label="AcceptDialogFragment" />
 </navigation>

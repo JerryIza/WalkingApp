@@ -1,4 +1,4 @@
-package com.example.trailit.ui.adapters
+          package com.example.trailit.ui.adapters
 
 import android.view.LayoutInflater
 import android.view.ViewGroup

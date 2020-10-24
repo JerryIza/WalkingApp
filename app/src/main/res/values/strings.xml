@@ -9,4 +9,13 @@
     </string-array>
     <string name="google_maps_key">AIzaSyBEURLRkkYNjn-rYfncOREFcYg4Ff9-R6E</string>
     <string name="cancel_mapping">Cancel Mapping</string>
+    <string name="trails">Trails</string>
+    <string name="map">Map</string>
+    <string name="statistics">Statistics</string>
+    <string name="delete_all_trails">Delete All Trails</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+    <string name="do_you_realy_want_to_exit">Do you realy want to exit ?</string>
+    <string name="calories">CALORIES</string>
+    <string name="delete_all">Do you really want to delete all trails?</string>
 </resources>

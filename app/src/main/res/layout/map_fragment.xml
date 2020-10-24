@@ -16,20 +16,32 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/tvTimer"
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline5"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="00:00:00:00"
-        android:textSize="50sp"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="0.56" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:backgroundTint="@android:color/background_dark"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/styled_box"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/mapView" />
+        app:layout_constraintTop_toTopOf="@+id/guideline50"
+        app:layout_constraintVertical_bias="0.0">
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <Button
         android:id="@+id/btnToggleRun"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="32dp"
         android:background="@drawable/rounded_button"
         android:backgroundTint="@color/colorAccept"
         android:text="Start"
@@ -38,6 +50,17 @@
         app:layout_constraintEnd_toStartOf="@+id/guideline4"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvTimer" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tvTimer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00:00:00"
+        android:textColor="#FFFFFF"
+        android:textSize="50sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/mapView" />
 
     <Button
         android:id="@+id/btnFinishRun"
@@ -61,7 +84,7 @@
         app:layout_constraintGuide_percent=".50" />
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/guideline5"
+        android:id="@+id/guideline50"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"

@@ -12,6 +12,9 @@ class MainRepository @Inject constructor(
 
     suspend fun deleteRun(run: Run) = runDAO.deleteRun(run)
 
+    suspend fun deleteAllRuns() = runDAO.deleteAllRuns()
+
+    suspend fun getDbCount() = runDAO.getDbCount()
     //live data is asynchronous
     fun getAllRunsSortedByDate() = runDAO.getAllRunsSortedByDate()
 

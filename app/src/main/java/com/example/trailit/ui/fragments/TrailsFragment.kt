@@ -4,41 +4,50 @@ import android.Manifest
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.AdapterView.*
+import android.widget.PopupMenu
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
+import androidx.navigation.Navigation
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.trailit.databinding.RunFragmentBinding
+import com.example.trailit.R
+import com.example.trailit.databinding.AcceptDialogBinding
+import com.example.trailit.databinding.TrailsFragmentBinding
 import com.example.trailit.other.Constants.REQUEST_CODE_LOCATION_PERMISSION
 import com.example.trailit.other.SortBy
 import com.example.trailit.other.TrackingUtility
 import com.example.trailit.ui.adapters.TrailAdapter
 import com.example.trailit.ui.viewmodels.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.android.synthetic.main.run_fragment.*
+import kotlinx.android.synthetic.main.trails_fragment.*
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
 
 @AndroidEntryPoint
-class RunFragment : Fragment(), EasyPermissions.PermissionCallbacks {
+class TrailsFragment : Fragment(), EasyPermissions.PermissionCallbacks {
 
-    private lateinit var binding: RunFragmentBinding
+    private lateinit var binding: TrailsFragmentBinding
 
-    //"by" is how we inject from viewmodel
+    //instantiating by using androidx.fragment:fragment-ktx: more concise
     private val viewModel: MainViewModel by viewModels()
 
     private lateinit var trailAdapter: TrailAdapter
+
+    //val navController = Navigation.findNavController(requireActivity(), R.id.navHostFragment)
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        binding = RunFragmentBinding.inflate(inflater, container, false)
+        binding = TrailsFragmentBinding.inflate(inflater, container, false)
         return binding.root
     }
 
@@ -74,6 +83,11 @@ class RunFragment : Fragment(), EasyPermissions.PermissionCallbacks {
                 }
             }
         }
+        binding.kebabBtn.setOnClickListener {
+            showKebabMenu(binding.kebabBtn)
+
+        }
+
 
         viewModel.runs.observe(viewLifecycleOwner, Observer {
             trailAdapter.submitList(it)
@@ -133,4 +147,23 @@ class RunFragment : Fragment(), EasyPermissions.PermissionCallbacks {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
+
+    private fun showKebabMenu(view: View){
+        val popup = PopupMenu(context, view)
+        popup.inflate(R.menu.kebab_menu)
+
+        popup.setOnMenuItemClickListener { item: MenuItem? ->
+
+            when (item!!.itemId) {
+                R.id.deleteTrails -> {
+
+                  findNavController().navigate(R.id.acceptDialogFragment)
+                }
+            }
+            true
+        }
+        popup.show()
+
+    }
+
 }

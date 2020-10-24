@@ -21,6 +21,9 @@ import kotlinx.android.synthetic.main.statistics_fragment.*
 import java.lang.Math.round
 import kotlin.math.roundToInt
 import com.example.trailit.databinding.StatisticsFragmentBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 
 @AndroidEntryPoint
@@ -29,6 +32,9 @@ class StatisticsFragment: Fragment() {
     private lateinit var binding: StatisticsFragmentBinding
 
     private val viewModel: StatisticsViewModel by viewModels()
+
+    private var xAxisMax: Float = 0.0f
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -43,60 +49,65 @@ class StatisticsFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
         setupObservers()
         setUpBarChart()
+
+        GlobalScope.launch(Dispatchers.Main) {
+            xAxisMax = viewModel.getDbSize().toFloat()
+            println(xAxisMax)
+        }
+
     }
 
     private fun setUpBarChart() {
-        barChart.xAxis.apply {
+        binding.barChart.xAxis.apply {
             position = XAxis.XAxisPosition.BOTTOM
             setDrawLabels(false)
             axisLineColor = Color.WHITE
             textColor = Color.WHITE
-
         }
-        barChart.axisLeft.apply {
+        binding.barChart.axisLeft.apply {
             axisLineColor = Color.WHITE
             textColor = Color.WHITE
 
         }
-
-        barChart.axisRight.apply {
+        binding.barChart.axisRight.apply {
             axisLineColor = Color.WHITE
             textColor = Color.WHITE
         }
 
-        barChart.apply {
-
-        }
     }
 
     private fun setupObservers() {
-        viewModel.totalTimeRun.observe(viewLifecycleOwner, Observer {
+        viewModel.totalTimeRun.observe(viewLifecycleOwner, {
             it?.let {
                 val totalTimeRun = TrackingUtility.getFormattedStopWatchTime(it)
                 tvTotalTime.text = totalTimeRun
+
             }
         })
 
-        viewModel.totalDistance.observe(viewLifecycleOwner, Observer {
+        viewModel.totalDistance.observe(viewLifecycleOwner, {
             it?.let {
                 val miles = it / 1609f
-                val totalDistance = round(miles * 10f) / 10f
+                val totalDistance = round(miles) / 10f
                 val totalDistanceString = "${totalDistance}Miles"
                 tvTotalDistance.text = totalDistanceString
             }
         })
-        viewModel.totalAvgSpeed.observe(viewLifecycleOwner, Observer {
-            val avgSpeed = (it * 10f).roundToInt() / 10f
-            val avgSpeedString = "${avgSpeed}Mph"
-            tvAverageSpeed.text = avgSpeedString
+        viewModel.totalAvgSpeed.observe(viewLifecycleOwner, {
+            if (it!= null) {
+                val avgSpeed = (it).roundToInt() / 10f
+                val avgSpeedString = "${avgSpeed}Mph"
+                tvAverageSpeed.text = avgSpeedString
+            }
         })
 
-        viewModel.totalCaloriesBurned.observe(viewLifecycleOwner, Observer {
+        viewModel.totalCaloriesBurned.observe(viewLifecycleOwner, {
+
             val totalCalories = "${it}kCal"
             tvAverageSpeed.text = totalCalories
 
         })
-        viewModel.runsSortedByDate.observe(viewLifecycleOwner, Observer {
+        viewModel.runsSortedByDate.observe(viewLifecycleOwner, {
             it?.let {
                 val allAvgSpeeds = it.indices.map { i -> BarEntry(i.toFloat(), it[i].avgSpeedInMPH)}
                 val chartDataSet = BarDataSet(allAvgSpeeds, "Avg Speed").apply {
@@ -108,6 +119,7 @@ class StatisticsFragment: Fragment() {
                 barChart.invalidate()
 
         })
+
 
     }
 

@@ -12,7 +12,6 @@ import androidx.navigation.fragment.findNavController
 import com.example.trailit.R
 import com.example.trailit.data.entitites.Run
 import com.example.trailit.databinding.MapFragmentBinding
-import com.example.trailit.other.Constants.ACTION_IDLE_SERVICE
 import com.example.trailit.other.Constants.ACTION_PAUSE_SERVICE
 import com.example.trailit.other.Constants.ACTION_START_RESUME_TRACKING_SERVICE
 import com.example.trailit.other.Constants.ACTION_STOP_SERVICE
@@ -69,7 +68,7 @@ class MapFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View? {
         binding = MapFragmentBinding.inflate(inflater, container, false)
-        setHasOptionsMenu(true)
+        //setHasOptionsMenu(true)
         return binding.root
 
     }
@@ -92,8 +91,6 @@ class MapFragment : Fragment() {
             addAllTrailLines()
         }
         setUpObservers()
-        commandToService(ACTION_IDLE_SERVICE)
-
     }
 
 
@@ -116,7 +113,6 @@ class MapFragment : Fragment() {
         super.onPrepareOptionsMenu(menu)
         if (currentTimeMillis > 0L) {
             this.menu?.getItem(0)?.isVisible = true
-
         }
     }
 
@@ -147,8 +143,9 @@ class MapFragment : Fragment() {
 
     private fun stopMapping() {
         commandToService(ACTION_STOP_SERVICE)
+        isTracking
         Timber.tag("COORDINATES" + coordinatePoints)
-        findNavController().navigate(R.id.action_trackingFragment_to_runFragment)
+        findNavController().navigate(R.id.action_trackingFragment_to_trailsFragment)
     }
 
     private fun setUpObservers() {
@@ -172,22 +169,19 @@ class MapFragment : Fragment() {
 
     private fun updateTracking(isTracking: Boolean) {
         this.isTracking = isTracking
-        if (!isTracking) {
+        if (!isTracking && currentTimeMillis > 0L) {
             btnToggleRun.text = "Start"
             btnFinishRun.visibility = View.VISIBLE
-        } else {
+        } else if(!isTracking){
+            btnToggleRun.text = "Start"
+            btnFinishRun.visibility = View.GONE}
+        else{
             btnToggleRun.text = "Stop"
             menu?.get(0)?.isVisible = true
-
             btnFinishRun.visibility = View.GONE
         }
     }
 
-    private fun defaultViewAngleToUser() {
-            map?.animateCamera(CameraUpdateFactory.newLatLngZoom(
-                coordinatePoints.last().last(), MAP_ZOOM
-            ))
-        }
 
 
     private fun panViewAngleToUser() {
@@ -225,8 +219,9 @@ class MapFragment : Fragment() {
             var distanceInMeters = 0
             for (trailLine in coordinatePoints) {
                 distanceInMeters += TrackingUtility.calculateTrailLineLength(trailLine).toInt()
+                println(distanceInMeters)
             }
-            val avgSpeed = round((distanceInMeters / 1609f) / (currentTimeMillis / 1000f / 60 / 60) * 10) / 10
+            val avgSpeed = round(distanceInMeters / 1609f) / (currentTimeMillis / 1000f / 60 / 60) / 10
             val dateTimestamp = Calendar.getInstance().timeInMillis
             //we can pair with a smart watch, would be calculated much better
             val caloriesBurned = ((distanceInMeters / 1000f) * weight).toInt()

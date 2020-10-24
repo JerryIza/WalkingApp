@@ -15,6 +15,12 @@ interface RunDAO {
     @Delete
     suspend fun deleteRun(run: Run)
 
+    @Query("DELETE FROM running_table")
+    suspend fun deleteAllRuns()
+
+    @Query("SELECT count(id) FROM running_table")
+    suspend fun getDbCount() : Int
+
     //custom query to sort by timestamp
     @Query("SELECT * FROM running_table ORDER BY avgSpeedInMPH DESC")
     fun getAllRunsSortedByAvgSpeed(): LiveData<List<Run>>
