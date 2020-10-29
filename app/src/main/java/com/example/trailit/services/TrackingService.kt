@@ -53,7 +53,7 @@ typealias TrailLines = MutableList<TrailLine>
 @AndroidEntryPoint
 class TrackingService : LifecycleService() {
 
-    var isFistTrail = true
+    var isFirstTrail = true
     var serviceKilled = false
 
     //needed to provide location updates.
@@ -95,7 +95,7 @@ class TrackingService : LifecycleService() {
 
     private fun killService() {
         serviceKilled = true
-        isFistTrail = true
+        isFirstTrail = true
         pauseService()
         createInitialValues()
         stopForeground(true)
@@ -107,9 +107,9 @@ class TrackingService : LifecycleService() {
         intent?.let {
             when (it.action) {
                 ACTION_START_RESUME_TRACKING_SERVICE -> {
-                    if (isFistTrail) {
+                    if (isFirstTrail) {
                         startForegroundService()
-                        isFistTrail = false
+                        isFirstTrail = false
                     } else {
                         Timber.d("Resuming service...")
                         startTimer()
